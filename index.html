@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Restaurant Revenue Management</title>
+<style>
+:root{
+  --bg:#f5f7fb;--card:#fff;--text:#172033;--muted:#6b7280;--line:#e5e9f0;
+  --blue:#315eea;--blue2:#5b7cfa;--green:#14966b;--red:#dc4f5f;--amber:#b7791f;
+  --shadow:0 8px 28px rgba(20,34,70,.06);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+button,input{font:inherit}
+button{cursor:pointer}
+.app{max-width:1500px;margin:auto;padding:30px}
+.header{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;margin-bottom:24px}
+.eyebrow{font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--blue);margin-bottom:7px}
+h1{font-size:30px;line-height:1.15;margin:0 0 7px;font-weight:800;letter-spacing:-.03em}
+.subtitle{color:var(--muted);font-size:14px}
+.status{background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-size:12px;color:#556071;box-shadow:var(--shadow)}
+.status span{display:inline-block;width:8px;height:8px;border-radius:50%;background:#20b486;margin-right:7px}
+.filter{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:17px;box-shadow:var(--shadow);margin-bottom:22px}
+.filter-top{display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:14px}
+.filter-title{font-size:13px;font-weight:800}
+.presets{display:flex;gap:7px}
+.preset{border:1px solid var(--line);background:#fff;color:#526070;border-radius:9px;padding:8px 13px;font-size:12px;font-weight:700}
+.preset.active{background:#eef2ff;color:var(--blue);border-color:#cbd5ff}
+.date-controls{display:flex;align-items:end;gap:12px;flex-wrap:wrap}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:11px;color:var(--muted);font-weight:700}
+.field input{height:38px;border:1px solid #dfe4ec;border-radius:9px;padding:0 11px;color:#273247;background:#fff}
+.apply{height:38px;border:0;border-radius:9px;background:var(--blue);color:#fff;padding:0 18px;font-size:12px;font-weight:800;box-shadow:0 4px 12px rgba(49,94,234,.18)}
+.range-note{margin-left:auto;color:var(--muted);font-size:12px;padding-bottom:10px}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow)}
+.metric{padding:19px}
+.metric-head{display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:12px;font-weight:700}
+.icon{width:34px;height:34px;border-radius:10px;background:#eef2ff;color:var(--blue);display:grid;place-items:center;font-weight:900}
+.metric-value{font-size:26px;font-weight:850;letter-spacing:-.03em;margin:13px 0 7px}
+.compare{font-size:11px;display:flex;gap:5px;align-items:center;font-weight:700}
+.compare.up{color:var(--green)}.compare.down{color:var(--red)}.compare.neutral{color:#8b93a1}
+.chart-card{padding:20px;margin-bottom:20px}
+.section-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:17px}
+.section-title{font-size:15px;font-weight:800}
+.section-sub{font-size:11px;color:var(--muted);margin-top:3px}
+.legend{display:flex;gap:16px;font-size:11px;color:#687386}
+.legend span{display:flex;align-items:center;gap:6px}
+.dot{width:9px;height:3px;border-radius:2px}.dot.sales{background:#315eea}.dot.net{background:#18a477}
+.chart-wrap{position:relative;height:390px}
+canvas{width:100%;height:100%;display:block}
+.tooltip{position:absolute;display:none;pointer-events:none;background:#172033;color:#fff;border-radius:9px;padding:10px 12px;font-size:11px;line-height:1.55;box-shadow:0 8px 22px rgba(0,0,0,.16);min-width:150px;z-index:5}
+.tooltip strong{font-size:12px}
+.secondary{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px}
+.small-card{padding:18px}
+.small-label{font-size:11px;color:var(--muted);font-weight:750;text-transform:uppercase;letter-spacing:.05em}
+.small-value{font-size:19px;font-weight:850;margin-top:9px}
+.small-detail{font-size:11px;color:var(--muted);margin-top:5px}
+.table-card{overflow:hidden;margin-bottom:20px}
+.table-head{padding:18px 20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+.table-wrap{overflow:auto}
+table{width:100%;border-collapse:collapse;min-width:760px}
+th,td{padding:13px 20px;text-align:right;border-bottom:1px solid #edf0f4;font-size:12px;white-space:nowrap}
+th{text-transform:uppercase;letter-spacing:.05em;color:#87909e;font-size:10px;background:#fafbfc}
+th:first-child,td:first-child{text-align:left}
+tbody tr:hover{background:#fafcff}
+tbody tr:last-child td{border-bottom:0}
+.empty{padding:45px;text-align:center;color:var(--muted);font-size:13px}
+.footer{text-align:center;color:#8a93a1;font-size:11px;padding:4px 0 15px}
+@media(max-width:1000px){.cards{grid-template-columns:repeat(2,1fr)}.header{flex-direction:column}.range-note{margin-left:0}.chart-wrap{height:330px}}
+@media(max-width:650px){.app{padding:17px}.cards,.secondary{grid-template-columns:1fr}.filter-top{align-items:flex-start;flex-direction:column}.date-controls{align-items:stretch;flex-direction:column}.field input,.apply{width:100%}.range-note{padding:0}.metric-value{font-size:24px}h1{font-size:25px}.legend{gap:9px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="header">
+    <div>
+      <div class="eyebrow">Revenue Analytics</div>
+      <h1>Restaurant Revenue Management</h1>
+      <div class="subtitle">Monitor sales performance, order activity, and revenue trends.</div>
+    </div>
+    <div class="status"><span></span>Live demonstration data</div>
+  </header>
+
+  <section class="filter">
+    <div class="filter-top">
+      <div class="filter-title">Revenue Date Range</div>
+      <div class="presets">
+        <button class="preset" data-days="3">3 Days</button>
+        <button class="preset" data-days="7">7 Days</button>
+        <button class="preset active" data-days="14">14 Days</button>
+      </div>
+    </div>
+    <div class="date-controls">
+      <div class="field"><label for="startDate">START DATE</label><input type="date" id="startDate"></div>
+      <div class="field"><label for="endDate">END DATE</label><input type="date" id="endDate"></div>
+      <button class="apply" id="applyFilter">Apply Filter</button>
+      <div class="range-note" id="rangeNote"></div>
+    </div>
+  </section>
+
+  <section class="cards">
+    <div class="card metric"><div class="metric-head"><span>Total Sales</span><div class="icon">₱</div></div><div class="metric-value" id="totalSales">₱0</div><div class="compare neutral" id="salesCompare">— No comparison</div></div>
+    <div class="card metric"><div class="metric-head"><span>Net Revenue</span><div class="icon">↗</div></div><div class="metric-value" id="netRevenue">₱0</div><div class="compare neutral" id="netCompare">— No comparison</div></div>
+    <div class="card metric"><div class="metric-head"><span>Total Orders</span><div class="icon">#</div></div><div class="metric-value" id="totalOrders">0</div><div class="compare neutral" id="ordersCompare">— No comparison</div></div>
+    <div class="card metric"><div class="metric-head"><span>Average Order Value</span><div class="icon">AOV</div></div><div class="metric-value" id="aov">₱0</div><div class="compare neutral" id="aovCompare">— No comparison</div></div>
+  </section>
+
+  <section class="card chart-card">
+    <div class="section-head">
+      <div><div class="section-title">Restaurant Revenue Trend</div><div class="section-sub" id="chartSubtitle">Daily total sales vs. net revenue</div></div>
+      <div class="legend"><span><i class="dot sales"></i>Total Sales</span><span><i class="dot net"></i>Net Revenue</span></div>
+    </div>
+    <div class="chart-wrap" id="chartWrap">
+      <canvas id="revenueChart"></canvas>
+      <div class="tooltip" id="tooltip"></div>
+    </div>
+  </section>
+
+  <section class="secondary">
+    <div class="card small-card"><div class="small-label">Top-Selling Item</div><div class="small-value" id="topItem">—</div><div class="small-detail" id="topItemDetail">Based on daily top-item appearances</div></div>
+    <div class="card small-card"><div class="small-label">Peak Revenue Period</div><div class="small-value" id="peakPeriod">—</div><div class="small-detail" id="peakPeriodDetail">Most frequently reported peak period</div></div>
+    <div class="card small-card"><div class="small-label">Total Discounts</div><div class="small-value" id="discounts">₱0</div><div class="small-detail">Combined discounts for selected dates</div></div>
+  </section>
+
+  <section class="card table-card">
+    <div class="table-head"><div><div class="section-title">Revenue Performance</div><div class="section-sub">Daily revenue records included in the current filter</div></div><div class="section-sub" id="rowCount"></div></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Date</th><th>Total Sales</th><th>Orders</th><th>Avg. Order Value</th><th>Discounts</th><th>Net Revenue</th></tr></thead>
+        <tbody id="revenueTable"></tbody>
+      </table>
+    </div>
+  </section>
+  <div class="footer">Restaurant Revenue Management • Demonstration Dashboard • Philippine Peso (₱)</div>
+</div>
+
+<script>
+const revenueData = [
+{date:"2026-09-15",totalSales:38500,orders:78,averageOrderValue:494,peakPeriod:"6:00–8:00 PM",topItem:"Chicken Inasal",discounts:1800,netRevenue:36700},
+{date:"2026-09-16",totalSales:41200,orders:82,averageOrderValue:502,peakPeriod:"6:00–9:00 PM",topItem:"Beef Steak",discounts:2100,netRevenue:39100},
+{date:"2026-09-17",totalSales:44750,orders:91,averageOrderValue:492,peakPeriod:"7:00–9:00 PM",topItem:"Seafood Pasta",discounts:2300,netRevenue:42450},
+{date:"2026-09-18",totalSales:46800,orders:96,averageOrderValue:488,peakPeriod:"6:00–9:00 PM",topItem:"Chicken Inasal",discounts:2500,netRevenue:44300},
+{date:"2026-09-19",totalSales:52300,orders:108,averageOrderValue:484,peakPeriod:"6:00–10:00 PM",topItem:"Beef Steak",discounts:3200,netRevenue:49100},
+{date:"2026-09-20",totalSales:55800,orders:115,averageOrderValue:485,peakPeriod:"6:00–10:00 PM",topItem:"Seafood Pasta",discounts:3500,netRevenue:52300},
+{date:"2026-09-21",totalSales:40100,orders:81,averageOrderValue:495,peakPeriod:"6:00–8:00 PM",topItem:"Chicken Inasal",discounts:1900,netRevenue:38200},
+{date:"2026-09-22",totalSales:42900,orders:87,averageOrderValue:493,peakPeriod:"6:00–9:00 PM",topItem:"Beef Steak",discounts:2100,netRevenue:40800},
+{date:"2026-09-23",totalSales:45100,orders:92,averageOrderValue:490,peakPeriod:"6:00–9:00 PM",topItem:"Seafood Pasta",discounts:2400,netRevenue:42700},
+{date:"2026-09-24",totalSales:47400,orders:97,averageOrderValue:489,peakPeriod:"6:00–9:00 PM",topItem:"Chicken Inasal",discounts:2600,netRevenue:44800},
+{date:"2026-09-25",totalSales:49800,orders:101,averageOrderValue:493,peakPeriod:"6:00–10:00 PM",topItem:"Beef Steak",discounts:2800,netRevenue:47000},
+{date:"2026-09-26",totalSales:42500,orders:85,averageOrderValue:500,peakPeriod:"6:00–8:00 PM",topItem:"Chicken Inasal",discounts:2500,netRevenue:40000},
+{date:"2026-09-27",totalSales:51800,orders:104,averageOrderValue:498,peakPeriod:"6:00–9:00 PM",topItem:"Seafood Pasta",discounts:3200,netRevenue:48600},
+{date:"2026-09-28",totalSales:47250,orders:95,averageOrderValue:497,peakPeriod:"6:00–8:00 PM",topItem:"Beef Steak",discounts:1800,netRevenue:45450}
+];
+
+const $=id=>document.getElementById(id);
+const peso=n=>"₱"+Number(n||0).toLocaleString("en-PH",{minimumFractionDigits:0,maximumFractionDigits:0});
+const shortDate=d=>new Date(d+"T00:00:00").toLocaleDateString("en-PH",{month:"short",day:"numeric"});
+const longDate=d=>new Date(d+"T00:00:00").toLocaleDateString("en-PH",{month:"long",day:"numeric",year:"numeric"});
+
+let selectedStart="2026-09-15",selectedEnd="2026-09-28", currentData=[...revenueData];
+
+function filterDataByRange(){
+  return revenueData.filter(r=>r.date>=selectedStart&&r.date<=selectedEnd);
+}
+
+function calculateMetrics(data){
+  const totalSales=data.reduce((s,r)=>s+r.totalSales,0);
+  const netRevenue=data.reduce((s,r)=>s+r.netRevenue,0);
+  const totalOrders=data.reduce((s,r)=>s+r.orders,0);
+  const discounts=data.reduce((s,r)=>s+r.discounts,0);
+  const aov=totalOrders?totalSales/totalOrders:0;
+  const itemCount={},periodCount={};
+  data.forEach(r=>{itemCount[r.topItem]=(itemCount[r.topItem]||0)+1;periodCount[r.peakPeriod]=(periodCount[r.peakPeriod]||0)+1});
+  const topItem=Object.entries(itemCount).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]))[0];
+  const peakPeriod=Object.entries(periodCount).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]))[0];
+  return {totalSales,netRevenue,totalOrders,discounts,aov,topItem:topItem?.[0]||"—",topItemCount:topItem?.[1]||0,peakPeriod:peakPeriod?.[0]||"—",peakCount:peakPeriod?.[1]||0};
+}
+
+function getPreviousPeriod(){
+  const start=new Date(selectedStart+"T00:00:00"),end=new Date(selectedEnd+"T00:00:00");
+  const days=Math.round((end-start)/86400000)+1;
+  const prevEnd=new Date(start);prevEnd.setDate(prevEnd.getDate()-1);
+  const prevStart=new Date(prevEnd);prevStart.setDate(prevStart.getDate()-days+1);
+  const iso=d=>d.toISOString().slice(0,10);
+  return revenueData.filter(r=>r.date>=iso(prevStart)&&r.date<=iso(prevEnd));
+}
+
+function comparison(current,previous){
+  if(!previous.length||previous.length<currentData.length)return {text:"— Insufficient comparison data",cls:"neutral"};
+  const p=previous.reduce((s,r)=>s+r._value,0), c=current.reduce((s,r)=>s+r._value,0);
+  if(!p)return {text:"— No comparison",cls:"neutral"};
+  const pct=((c-p)/p)*100;
+  return {text:(pct>=0?"↑ ":"↓ ")+Math.abs(pct).toFixed(1)+"% vs previous period",cls:pct>0?"up":pct<0?"down":"neutral"};
+}
+function setComparison(id,currentValue,previousData,field,mode="sum"){
+  if(!previousData.length){$(id).className="compare neutral";$(id).textContent="— Insufficient comparison data";return}
+  const prev=mode==="aov"
+    ? previousData.reduce((s,r)=>s+r.totalSales,0)/(previousData.reduce((s,r)=>s+r.orders,0)||1)
+    : previousData.reduce((s,r)=>s+r[field],0);
+  if(!prev){$(id).className="compare neutral";$(id).textContent="— No comparison";return}
+  const pct=((currentValue-prev)/prev)*100;
+  $(id).className="compare "+(pct>0?"up":pct<0?"down":"neutral");
+  $(id).textContent=(pct>=0?"↑ ":"↓ ")+Math.abs(pct).toFixed(1)+"% vs previous period";
+}
+
+function updateCards(data){
+  const m=calculateMetrics(data);
+  $("totalSales").textContent=peso(m.totalSales);
+  $("netRevenue").textContent=peso(m.netRevenue);
+  $("totalOrders").textContent=m.totalOrders.toLocaleString();
+  $("aov").textContent=peso(m.aov);
+  $("discounts").textContent=peso(m.discounts);
+  $("topItem").textContent=m.topItem;
+  $("topItemDetail").textContent=m.topItemCount+" of "+data.length+" selected days";
+  $("peakPeriod").textContent=m.peakPeriod;
+  $("peakPeriodDetail").textContent=m.peakCount+" of "+data.length+" selected days";
+  const prevRaw=getPreviousPeriod();
+  setComparison("salesCompare",m.totalSales,prevRaw,"totalSales");
+  setComparison("netCompare",m.netRevenue,prevRaw,"netRevenue");
+  setComparison("ordersCompare",m.totalOrders,prevRaw,"orders");
+  setComparison("aovCompare",m.aov,prevRaw,null,"aov");
+}
+
+function updateTable(data){
+  const body=$("revenueTable");
+  $("rowCount").textContent=data.length+" record"+(data.length===1?"":"s");
+  if(!data.length){body.innerHTML='<tr><td colspan="6" class="empty">No revenue records found for this date range.</td></tr>';return}
+  body.innerHTML=data.map(r=>`<tr>
+    <td>${longDate(r.date)}</td><td>${peso(r.totalSales)}</td><td>${r.orders.toLocaleString()}</td>
+    <td>${peso(r.totalSales/r.orders)}</td><td>${peso(r.discounts)}</td><td><strong>${peso(r.netRevenue)}</strong></td>
+  </tr>`).join("");
+}
+
+function updateDashboard(){
+  currentData=filterDataByRange();
+  const m=calculateMetrics(currentData);
+  $("rangeNote").textContent=currentData.length?`${longDate(selectedStart)} – ${longDate(selectedEnd)} • ${currentData.length} days`:"No records in selected range";
+  $("chartSubtitle").textContent=currentData.length?`${shortDate(selectedStart)} – ${shortDate(selectedEnd)} • Daily total sales vs. net revenue`:"No data available";
+  updateCards(currentData);updateTable(currentData);drawChart(currentData);
+}
+
+function setupCanvas(){
+  const canvas=$("revenueChart"),rect=canvas.getBoundingClientRect(),dpr=window.devicePixelRatio||1;
+  canvas.width=Math.max(1,rect.width*dpr);canvas.height=Math.max(1,rect.height*dpr);
+  const ctx=canvas.getContext("2d");ctx.setTransform(dpr,0,0,dpr,0,0);
+  return {canvas,ctx,w:rect.width,h:rect.height};
+}
+
+let chartState={points:[]};
+
+function drawChart(data){
+  const {ctx,w,h}=setupCanvas();
+  ctx.clearRect(0,0,w,h);
+  if(!data.length){ctx.fillStyle="#8992a1";ctx.font="13px system-ui";ctx.textAlign="center";ctx.fillText("No revenue data for this range",w/2,h/2);chartState={points:[]};return}
+  const pad={l:62,r:22,t:25,b:48},cw=w-pad.l-pad.r,ch=h-pad.t-pad.b;
+  const max=Math.ceil(Math.max(...data.map(r=>Math.max(r.totalSales,r.netRevenue)))/10000)*10000;
+  const steps=5;
+  const yVal=v=>pad.t+ch-(v/max)*ch;
+  const xVal=i=>data.length===1?pad.l+cw/2:pad.l+(i/(data.length-1))*cw;
+
+  ctx.strokeStyle="#edf0f4";ctx.lineWidth=1;
+  ctx.font="10px system-ui";ctx.fillStyle="#8b93a1";ctx.textAlign="right";
+  for(let i=0;i<=steps;i++){
+    const val=max-(max/steps)*i,y=yVal(val);
+    ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(w-pad.r,y);ctx.stroke();
+    ctx.fillText(peso(val),pad.l-9,y+3);
+  }
+  ctx.strokeStyle="#dfe4ec";ctx.beginPath();ctx.moveTo(pad.l,pad.t);ctx.lineTo(pad.l,h-pad.b);ctx.lineTo(w-pad.r,h-pad.b);ctx.stroke();
+
+  ctx.textAlign="center";ctx.fillStyle="#7e8795";
+  const labelEvery=data.length>10?2:1;
+  data.forEach((r,i)=>{
+    if(i%labelEvery===0||i===data.length-1){
+      ctx.fillText(shortDate(r.date),xVal(i),h-pad.b+25);
+    }
+  });
+
+  function smoothLine(key,stroke){
+    const pts=data.map((r,i)=>({x:xVal(i),y:yVal(r[key]),value:r[key],date:r.date}));
+    ctx.strokeStyle=stroke;ctx.lineWidth=2;ctx.lineJoin="round";ctx.lineCap="round";
+    ctx.beginPath();
+    pts.forEach((p,i)=>{
+      if(i===0){ctx.moveTo(p.x,p.y);return}
+      const prev=pts[i-1],mx=(prev.x+p.x)/2;
+      ctx.bezierCurveTo(mx,prev.y,mx,p.y,p.x,p.y);
+    });
+    ctx.stroke();
+    ctx.fillStyle=stroke;
+    pts.forEach(p=>{ctx.beginPath();ctx.arc(p.x,p.y,3,0,Math.PI*2);ctx.fill()});
+    return pts;
+  }
+  const salesPts=smoothLine("totalSales","#315eea");
+  const netPts=smoothLine("netRevenue","#18a477");
+  chartState={points:data.map((r,i)=>({x:xVal(i),date:r.date,sales:salesPts[i],net:netPts[i],row:r}))};
+}
+
+function chartTooltip(e){
+  const canvas=$("revenueChart"),rect=canvas.getBoundingClientRect();
+  const x=e.clientX-rect.left,y=e.clientY-rect.top;
+  let nearest=null,min=Infinity;
+  chartState.points.forEach(p=>{const d=Math.abs(x-p.x);if(d<min){min=d;nearest=p}});
+  const tip=$("tooltip");
+  if(nearest&&min<28){
+    tip.style.display="block";
+    tip.innerHTML=`<strong>${longDate(nearest.date)}</strong><br><span style="color:#8eb0ff">● Total Sales: ${peso(nearest.row.totalSales)}</span><br><span style="color:#63d7b2">● Net Revenue: ${peso(nearest.row.netRevenue)}</span><br>Orders: ${nearest.row.orders}`;
+    let left=nearest.x+12;if(left+170>rect.width)left=nearest.x-180;
+    let top=Math.max(8,y-65);tip.style.left=left+"px";tip.style.top=top+"px";
+  }else tip.style.display="none";
+}
+
+function setPreset(days){
+  document.querySelectorAll(".preset").forEach(b=>b.classList.toggle("active",Number(b.dataset.days)===days));
+  const end=revenueData[revenueData.length-1].date;
+  const startIndex=Math.max(0,revenueData.length-days);
+  selectedStart=revenueData[startIndex].date;selectedEnd=end;
+  $("startDate").value=selectedStart;$("endDate").value=selectedEnd;updateDashboard();
+}
+document.querySelectorAll(".preset").forEach(btn=>btn.addEventListener("click",()=>setPreset(Number(btn.dataset.days))));
+$("applyFilter").addEventListener("click",()=>{
+  const s=$("startDate").value,e=$("endDate").value;
+  if(!s||!e){alert("Please select both start and end dates.");return}
+  if(s>e){alert("Start Date cannot be later than End Date.");return}
+  selectedStart=s;selectedEnd=e;
+  document.querySelectorAll(".preset").forEach(b=>b.classList.remove("active"));
+  updateDashboard();
+});
+$("revenueChart").addEventListener("mousemove",chartTooltip);
+$("revenueChart").addEventListener("mouseleave",()=>$("tooltip").style.display="none");
+window.addEventListener("resize",()=>drawChart(currentData));
+
+$("startDate").value=selectedStart;$("endDate").value=selectedEnd;
+updateDashboard();
+</script>
+</body>
+</html>
